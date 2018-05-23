@@ -167,7 +167,9 @@ class MitreCVE(models.Model):
         See https://github.com/CVEProject/automation-working-group/blob/master/cve_json_schema/DRAFT-JSON-file-format-v4.md
         """
         product_data = []
+        description_versions = []
         for prod_name, versions in self.product_versions().iteritems():
+            description_versions.extend('%s < %s' % (prod_name, v) for v in versions)
             product_data.append({
                 'product_name': prod_name,
                 'version': {
@@ -183,6 +185,10 @@ class MitreCVE(models.Model):
             for mfsa_id in self.mfsa_ids
         ]
         reference_data.extend([{'url': bug['url']} for bug in self.bugs])
+        if description_versions:
+            description_prefix = 'This vulnerability affects ' + ', and '.join(description_versions) + '. '
+        else:
+            description_prefix = ''
 
         return {
             'data_type': 'CVE',
@@ -223,7 +229,7 @@ class MitreCVE(models.Model):
                 'description_data': [
                     {
                         'lang': 'eng',
-                        'value': self.description,
+                        'value': description_prefix + self.description,
                     }
                 ]
             }
